@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Options Strategy Screener V4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal-backdrop, .modal { display: none; position: fixed; z-index: 40; }
+        .modal-backdrop { top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); }
+        .modal { top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; }
+        .regime-low { background-color: #ECFDF5; color: #067647; border-color: #34D399; }
+        .regime-neutral { background-color: #FFFBEB; color: #B45309; border-color: #FBBF24; }
+        .regime-high { background-color: #FEF2F2; color: #B91C1C; border-color: #F87171; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-900">Options Strategy Screener V4</h1>
+            <p class="text-lg text-gray-600 mt-2">Portfolio Construction Engine</p>
+        </header>
+
+        <!-- V4: Market Environment Dashboard -->
+        <div class="mb-8 p-6 bg-white rounded-lg shadow-lg">
+             <h2 class="text-2xl font-semibold mb-4 text-center border-b pb-2">Market Environment Dashboard</h2>
+             <div id="market-dashboard" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div id="regime-container" class="p-4 rounded-lg border-2">
+                    <p class="font-bold text-lg">Market Regime</p>
+                    <p id="regime-status" class="text-xl font-semibold">Loading...</p>
+                </div>
+                <div class="p-4 rounded-lg border-2 bg-gray-50">
+                    <p class="font-bold text-lg">VIX Level</p>
+                    <p id="vix-level" class="text-xl font-semibold">--</p>
+                </div>
+                <div class="p-4 rounded-lg border-2 bg-gray-50">
+                    <p class="font-bold text-lg">VIX Term Structure</p>
+                    <p id="vix-term-structure" class="text-xl font-semibold">Loading...</p>
+                </div>
+             </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left column for Universe -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Symbol Universe</h2>
+                <div id="universe-display" class="space-x-2 space-y-2 mb-4"></div>
+                <button id="edit-universe-btn" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Edit Universe</button>
+            </div>
+
+            <!-- Right column for Controls -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg flex flex-col justify-center">
+                 <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Controls</h2>
+                <div class="text-center">
+                    <button id="run-screener" class="bg-blue-600 text-white font-bold py-3 px-8 text-lg rounded-lg hover:bg-blue-700 transition">Run Screener</button>
+                    <button id="clear-results" class="bg-gray-500 text-white font-bold py-3 px-8 text-lg rounded-lg hover:bg-gray-600 transition ml-4">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- V4: Results Section for Portfolios -->
+        <div id="results-container" class="mt-8 min-h-[10rem]">
+             <div id="error-message" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md"></div>
+            <div id="loading" class="hidden text-center py-8 bg-white p-6 rounded-lg shadow-lg">
+                <div class="loader inline-block"></div>
+                <p id="progress-text" class="mt-4 text-gray-600">Initializing...</p>
+            </div>
+            <div id="portfolio-results-container"></div>
+        </div>
+    </div>
+    
+    <!-- Main Modal for individual trade details -->
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="modal" class="modal bg-white rounded-lg shadow-2xl w-11/12 md:w-3/4 lg:w-3/4 max-w-5xl">
+         <div class="p-6 border-b flex justify-between items-center"><h2 id="modal-title" class="text-2xl font-bold"></h2><button id="modal-close" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button></div>
+        <div class="p-6 max-h-[80vh] overflow-y-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+                <!-- Left Column -->
+                <div>
+                    <div class="bg-gray-50 p-4 rounded-lg"><h3 class="font-semibold text-lg mb-2">Strategy & Rationale</h3><p id="modal-strategy" class="text-xl font-bold text-blue-700"></p><p id="modal-rationale" class="text-sm text-gray-600 mt-1"></p></div>
+                    <div class="mt-4 bg-green-50 p-4 rounded-lg border border-green-200"><h3 class="font-semibold text-lg text-green-800 mb-2">Signal Confluence</h3><ul id="modal-confluence" class="text-sm space-y-1"></ul></div>
+                    <div class="mt-4"><h3 class="font-semibold text-lg mb-2">Key Metrics</h3><div id="modal-metrics" class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm"></div></div>
+                </div>
+                <!-- Right Column -->
+                <div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200"><h3 class="font-semibold text-lg mb-2">Example Trade</h3><div id="modal-trade" class="text-sm space-y-1 font-mono"></div></div>
+                    <div class="bg-red-50 p-4 rounded-lg border border-red-200 mt-4"><h3 class="font-semibold text-lg text-red-800 mb-2">Risk Profile</h3><div class="space-y-3 text-sm"><div><p class="font-semibold">Max Loss:</p><p id="modal-max-loss"></p></div><div><p class="font-semibold">Invalidation:</p><p id="modal-invalidation"></p></div><div><p class="font-semibold">Exit Strategy:</p><p id="modal-exit"></p></div></div></div>
+                    <div class="mt-4"><h3 class="font-semibold text-lg mb-2 text-center">Volatility Analysis</h3><canvas id="volatility-chart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universe Edit Modal -->
+    <div id="universe-modal-backdrop" class="modal-backdrop"></div>
+    <div id="universe-modal" class="modal bg-white rounded-lg shadow-2xl w-11/12 md:w-1/3">
+        <div class="p-6 border-b"><h2 class="text-2xl font-bold">Edit Symbol Universe</h2></div>
+        <div class="p-6"><textarea id="universe-textarea" class="w-full h-64 p-2 border rounded-md"></textarea></div>
+        <div class="p-6 bg-gray-50 flex justify-end space-x-4"><button id="universe-cancel-btn" class="bg-gray-200 py-2 px-4 rounded-lg">Cancel</button><button id="universe-save-btn" class="bg-blue-600 text-white py-2 px-4 rounded-lg">Save</button></div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const API_URL = 'http://127.0.0.1:8001';
+    
+    // --- UI Elements ---
+    const runBtn = document.getElementById('run-screener'), clearBtn = document.getElementById('clear-results');
+    const loadingDiv = document.getElementById('loading'), progressText = document.getElementById('progress-text');
+    const errorDiv = document.getElementById('error-message'), portfolioContainer = document.getElementById('portfolio-results-container');
+    const regimeContainer = document.getElementById('regime-container'), regimeStatus = document.getElementById('regime-status');
+    const vixLevel = document.getElementById('vix-level'), vixTerm = document.getElementById('vix-term-structure');
+
+    // --- Modal Setup ---
+    const setupModal = (modalId, backdropId, openBtnId, cancelBtnId) => {
+        const modal = document.getElementById(modalId), backdrop = document.getElementById(backdropId);
+        const openBtn = document.getElementById(openBtnId), cancelBtn = document.getElementById(cancelBtnId);
+        const mainCloseBtn = document.getElementById('modal-close');
+        const open = () => { modal.style.display = 'block'; backdrop.style.display = 'block'; };
+        const close = () => { modal.style.display = 'none'; backdrop.style.display = 'none'; };
+        if (openBtn) openBtn.addEventListener('click', open);
+        if (cancelBtn) cancelBtn.addEventListener('click', close);
+        if (backdrop) backdrop.addEventListener('click', close);
+        if (mainCloseBtn && modalId === 'modal') mainCloseBtn.addEventListener('click', close);
+        return { open, close };
+    };
+    const universeModalCtl = setupModal('universe-modal', 'universe-modal-backdrop', 'edit-universe-btn', 'universe-cancel-btn');
+    const tradeModalCtl = { open: () => { document.getElementById('modal').style.display='block'; document.getElementById('modal-backdrop').style.display='block' }};
+
+    // --- API & Data ---
+    const fetchApi = async (endpoint, options = {}) => {
+        try {
+            errorDiv.classList.add('hidden');
+            const response = await fetch(`${API_URL}${endpoint}`, options);
+            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+            return await response.json();
+        } catch (error) { showError(`API Error: ${error.message}. Is the backend server running?`); throw error; }
+    };
+
+    const universeCtl = {
+        display: document.getElementById('universe-display'),
+        textarea: document.getElementById('universe-textarea'),
+        fetch: () => fetchApi('/get-universe'),
+        save: (symbols) => fetchApi('/update-universe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbols }) }),
+        render: (symbols) => {
+            universeCtl.display.innerHTML = symbols.map(s => `<span class="inline-block bg-gray-100 text-sm font-medium px-2.5 py-0.5 rounded-full">${s}</span>`).join(' ');
+        },
+        load: async () => { try { const data = await universeCtl.fetch(); universeCtl.render(data.symbols || []); } catch(e){} },
+    };
+    document.getElementById('universe-save-btn').addEventListener('click', async () => {
+        const symbols = universeCtl.textarea.value.split('\n').map(s => s.trim().toUpperCase()).filter(Boolean);
+        await universeCtl.save(symbols); await universeCtl.load(); universeModalCtl.close();
+    });
+
+    // --- Main App Logic ---
+    clearBtn.addEventListener('click', () => { portfolioContainer.innerHTML = ''; errorDiv.classList.add('hidden'); });
+
+    runBtn.addEventListener('click', async () => {
+        portfolioContainer.innerHTML = ''; loadingDiv.classList.remove('hidden');
+        try {
+            progressText.textContent = 'Analyzing market environment...';
+            await loadMarketEnvironment();
+            progressText.textContent = 'Scanning symbol universe for portfolios...';
+            const portfolios = await fetchApi('/scan', { method: 'POST' });
+            if (portfolios.error) throw new Error(portfolios.error);
+            renderPortfolios(portfolios);
+        } catch (e) { /* error handled in fetchApi */ } finally { loadingDiv.classList.add('hidden'); }
+    });
+
+    const renderPortfolios = (portfolios) => {
+        if (!portfolios || portfolios.length === 0) {
+            portfolioContainer.innerHTML = `<p class="text-center text-gray-500 py-8 bg-white p-6 rounded-lg shadow-lg">No viable portfolios found.</p>`; return;
+        }
+        let html = '';
+        portfolios.forEach(p => {
+            const netDelta = p.trades.reduce((sum, t) => sum + (t.net_delta || 0), 0);
+            const netTheta = p.trades.reduce((sum, t) => sum + (t.net_theta || 0), 0);
+            html += `
+                <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
+                    <div class="border-b pb-3 mb-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-2xl font-bold text-gray-800">${p.title}</h3>
+                            <div class="flex space-x-4 text-sm">
+                                <span class="font-semibold">Net Delta: <span class="${netDelta >= 0 ? 'text-green-600' : 'text-red-600'}">${netDelta.toFixed(0)}</span></span>
+                                <span class="font-semibold">Net Theta: <span class="${netTheta >= 0 ? 'text-green-600' : 'text-red-600'}">${netTheta.toFixed(2)}</span></span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">${p.rationale || ''}</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-${p.trades.length > 1 ? 2 : 1} gap-4">
+                        ${p.trades.map(t => renderTradeCard(t)).join('')}
+                    </div>
+                </div>`;
+        });
+        portfolioContainer.innerHTML = html;
+        portfolioContainer.querySelectorAll('.trade-card').forEach(card => {
+            card.addEventListener('click', () => showModal(JSON.parse(card.dataset.row.replace(/&apos;/g, "'"))));
+        });
+    };
+
+    const renderTradeCard = (trade) => {
+        const rowData = JSON.stringify(trade).replace(/'/g, '&apos;');
+        return `
+            <div class="trade-card bg-gray-50 p-4 rounded-lg border hover:shadow-md cursor-pointer" data-row='${rowData}'>
+                <p class="font-bold text-lg">${trade.symbol} - <span class="text-blue-600">${trade.strategy}</span></p>
+                <p class="text-xs text-gray-600">${trade.rationale}</p>
+                 <div class="flex space-x-4 text-xs mt-2">
+                    <span>Δ: <span class="${trade.net_delta >= 0 ? 'text-green-600' : 'text-red-600'}">${(trade.net_delta || 0).toFixed(0)}</span></span>
+                    <span>Θ: <span class="${trade.net_theta >= 0 ? 'text-green-600' : 'text-red-600'}">${(trade.net_theta || 0).toFixed(2)}</span></span>
+                </div>
+            </div>`;
+    };
+
+    const showModal = (data) => {
+        tradeModalCtl.open();
+        // Populate modal...
+        document.getElementById('modal-title').textContent = `${data.symbol} - Detailed Analysis`;
+        document.getElementById('modal-strategy').textContent = data.strategy;
+        document.getElementById('modal-rationale').textContent = data.rationale;
+        document.getElementById('modal-confluence').innerHTML = (data.confluence || []).map(sig => `<li>${sig}</li>`).join('');
+        document.getElementById('modal-trade').innerHTML = (data.trade || []).map(leg => `<p>${leg}</p>`).join('');
+        document.getElementById('modal-max-loss').textContent = data.max_loss || 'N/A';
+        document.getElementById('modal-invalidation').textContent = data.invalidation_point || 'N/A';
+        document.getElementById('modal-exit').textContent = data.exit_strategy || 'N/A';
+        document.getElementById('modal-metrics').innerHTML = `
+            <div><strong>Price:</strong> $${(data.current_price || 0).toFixed(2)}</div>
+            <div><strong>IV30:</strong> ${(data.iv30 || 0).toFixed(2)}%</div>
+            <div><strong>IV90:</strong> ${(data.iv90 || 0).toFixed(2)}%</div>
+            <div><strong>Term Slope:</strong> ${(data.term_structure_slope || 0).toFixed(2)}</div>
+            <div><strong>HV20:</strong> ${(data.hv20 || 0).toFixed(2)}%</div>
+            <div><strong>Parkinson Vol:</strong> ${(data.parkinson20 || 0).toFixed(2)}%</div>
+            <div><strong>IV/HV Gap:</strong> ${(data.iv_hv_gap || 0).toFixed(2)}%</div>
+            <div><strong>VR Signal:</strong> ${data.vr_signal} (${(data.vr_20 || 0).toFixed(2)})</div>`;
+
+        // Charts
+        const createChart = (ctxId, chartVar, type, labels, data, label) => {
+            const ctx = document.getElementById(ctxId).getContext('2d');
+            if(window[chartVar]) window[chartVar].destroy();
+            window[chartVar] = new Chart(ctx, { type, data: { labels, datasets: [{ label, data, backgroundColor: ['rgba(54, 162, 235, 0.6)','rgba(255, 99, 132, 0.6)','rgba(75, 192, 192, 0.6)'] }] }, options: { plugins: { legend: { display: false } } } });
+        };
+        createChart('volatility-chart', 'volChart', 'bar', ['IV30', 'HV20', 'Parkinson'], [data.iv30, data.hv20, data.parkinson20], 'Volatility (%)');
+    };
+    
+    const showError = (message) => { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); };
+
+    // --- Initial Load ---
+    const loadMarketEnvironment = async () => {
+        try {
+            const data = await fetchApi('/get-market-environment');
+            regimeStatus.textContent = data.regime;
+            vixLevel.textContent = data.vix_level.toFixed(2);
+            vixTerm.textContent = data.vix_term_structure;
+            regimeContainer.className = 'p-4 rounded-lg border-2'; // Reset
+            if (data.regime === "Low Volatility") regimeContainer.classList.add('regime-low');
+            else if (data.regime === "High Volatility") regimeContainer.classList.add('regime-high');
+            else regimeContainer.classList.add('regime-neutral');
+        } catch(e) {}
+    };
+    
+    universeCtl.load();
+    loadMarketEnvironment();
+});
+</script>
+
+</body>
+</html>
+
