@@ -21,7 +21,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.
 app.title = "Advanced Options Strategy Finder - Alpha Pro Max"
 
 # API Configuration
-API_BASE_URL = "http://127.0.0.1:8001"
+API_BASE_URL = "http://127.0.0.1:8002"
 
 # Global state
 current_portfolios = []

@@ -80,7 +80,7 @@ class AdvancedOptionsSystem:
         
         required_packages = [
             'fastapi', 'uvicorn', 'pandas', 'numpy', 'yfinance', 
-            'scipy', 'scikit-learn', 'plotly', 'dash', 'dash_bootstrap_components'
+            'scipy', 'sklearn', 'plotly', 'dash', 'dash_bootstrap_components'
         ]
         
         missing_packages = []
@@ -229,7 +229,7 @@ class AdvancedOptionsSystem:
             
             # Start the process
             process = subprocess.Popen([
-                sys.executable, script_path
+                'python3', script_path
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
             self.processes[component_name] = process

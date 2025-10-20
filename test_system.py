@@ -37,6 +37,10 @@ def test_basic_functionality():
     logger.info("Testing basic functionality...")
     
     try:
+        import pandas as pd
+        import numpy as np
+        import yfinance as yf
+        
         # Test pandas
         df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
         assert len(df) == 3

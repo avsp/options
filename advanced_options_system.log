@@ -1,0 +1,23 @@
+2025-10-20 14:53:25,858 - __main__ - INFO - Running system tests...
+2025-10-20 14:53:31,130 - __main__ - INFO - ✓ All tests passed
+2025-10-20 14:53:31,130 - __main__ - INFO - ============================================================
+2025-10-20 14:53:31,130 - __main__ - INFO - STARTING ADVANCED OPTIONS TRADING SYSTEM - ALPHA PRO MAX
+2025-10-20 14:53:31,130 - __main__ - INFO - ============================================================
+2025-10-20 14:53:31,130 - __main__ - INFO - Initializing Advanced Options Trading System...
+2025-10-20 14:53:31,130 - __main__ - INFO - Checking system dependencies...
+2025-10-20 14:53:32,030 - __main__ - INFO - ✓ fastapi is installed
+2025-10-20 14:53:32,148 - __main__ - INFO - ✓ uvicorn is installed
+2025-10-20 14:53:32,807 - __main__ - INFO - ✓ pandas is installed
+2025-10-20 14:53:32,808 - __main__ - INFO - ✓ numpy is installed
+2025-10-20 14:53:33,079 - __main__ - INFO - ✓ yfinance is installed
+2025-10-20 14:53:33,086 - __main__ - INFO - ✓ scipy is installed
+2025-10-20 14:53:33,087 - __main__ - ERROR - ✗ scikit-learn is missing
+2025-10-20 14:53:33,089 - __main__ - INFO - ✓ plotly is installed
+2025-10-20 14:53:33,470 - __main__ - INFO - ✓ dash is installed
+2025-10-20 14:53:33,543 - __main__ - INFO - ✓ dash_bootstrap_components is installed
+2025-10-20 14:53:33,543 - __main__ - ERROR - Missing packages: scikit-learn
+2025-10-20 14:53:33,547 - __main__ - INFO - Installing missing packages...
+2025-10-20 14:58:06,894 - __main__ - ERROR - Failed to install dependencies: Command '['/usr/bin/python3', '-m', 'pip', 'install', '-r', 'requirements.txt']' returned non-zero exit status 1.
+2025-10-20 14:58:06,895 - __main__ - ERROR - Please install manually: pip install -r requirements.txt
+2025-10-20 14:58:06,895 - __main__ - INFO - Stopping Advanced Options Trading System...
+2025-10-20 14:58:06,898 - __main__ - INFO - System stopped ✓
